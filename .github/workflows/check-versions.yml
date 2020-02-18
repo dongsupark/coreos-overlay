@@ -1,0 +1,74 @@
+name: Get latest release version
+on:
+  push:
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch release version
+        id: fetch-release-version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux
+          versionNew=$(git -C linux tag | sed -n "/^v4.19.[0-9]*$/s/^v//p" | sort -ruV | head -1)
+          rm -rf linux
+          curl -L -o cork https://github.com/flatcar-linux/mantle/releases/download/v0.13.2/cork-0.13.2-amd64
+          curl -L -o cork.sig https://github.com/flatcar-linux/mantle/releases/download/v0.13.2/cork-0.13.2-amd64.sig
+          gpg --receive-keys 84C8E771C0DF83DFBFCAAAF03ADA89DEC2507883
+          gpg --verify cork.sig cork
+          rm -f cork.sig
+          chmod +x cork
+          mkdir -p ~/.local/bin
+          mv cork ~/.local/bin
+          export PATH=$PATH:$HOME/.local/bin
+          mkdir -p ~/flatcar-sdk
+          pushd ~/flatcar-sdk
+          cork create || true
+          sudo chown -R runner:docker ~/flatcar-sdk/chroot/var
+          git -C src/third_party/coreos-overlay reset --hard github/flatcar-master
+          git -C src/third_party/coreos-overlay config user.name 'Flatcar Buildbot'
+          git -C src/third_party/coreos-overlay config user.email 'buildbot@flatcar-linux.org'
+          versionOldStringAll=$(cat src/third_party/coreos-overlay/sys-kernel/coreos-sources/Manifest | grep patch-4.19 | cut -f2 -d\ )
+          versionOldString=${versionOldStringAll#patch-}
+          versionOld=${versionOldString%.xz}
+          [[ "$versionNew" = "$versionOld" ]] && echo "already the latest kernel, nothing to do" && exit 1
+          branch="linux-${versionNew}"
+          latest=${versionNew}
+          pushd src/third_party/coreos-overlay
+          function enter() ( cd ../../..; exec cork enter -- "$@" )
+          current=$(sed -n 's/^DIST patch-\(4.19.[0-9]*\).*/\1/p' sys-kernel/coreos-sources/Manifest)
+          git checkout -B "${branch}"
+          for pkg in sources modules kernel; do \
+            pushd "sys-kernel/coreos-${pkg}" >/dev/null; \
+            git mv "coreos-${pkg}"-*.ebuild "coreos-${pkg}-${latest}.ebuild"; \
+            sed -i -e '/^COREOS_SOURCE_REVISION=/s/=.*/=""/' "coreos-${pkg}-${latest}.ebuild"; \
+            popd >/dev/null; \
+          done
+          enter ebuild "/mnt/host/source/src/third_party/coreos-overlay/sys-kernel/coreos-sources/coreos-sources-${latest}.ebuild" manifest --force
+          # Send the new branch to GitHub.
+          git add sys-kernel/coreos-*
+          git commit -a -m "sys-kernel/coreos-sources: Bump ${current} to ${latest}"
+          git format-patch -1 --stdout HEAD > ${branch}.patch
+          popd
+          popd
+          git config user.name 'Flatcar Buildbot'
+          git config user.email 'buildbot@flatcar-linux.org'
+          git reset --hard HEAD
+          git am ~/flatcar-sdk/src/third_party/coreos-overlay/${branch}.patch
+          echo ::set-output name=version_latest::$(echo ${versionNew})
+          echo "end"
+
+      - name: create pull request
+        uses: peter-evans/create-pull-request@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: bump kernel to ${{ steps.fetch-release-version.outputs.version_latest }}
+          title: bump kernel to ${{ steps.fetch-release-version.outputs.version_latest }}
+          body: bump kernel to ${{ steps.fetch-release-version.outputs.version_latest }}
+          branch: linux-${{ steps.fetch-release-version.outputs.version_latest }}
+          base: flatcar-master
