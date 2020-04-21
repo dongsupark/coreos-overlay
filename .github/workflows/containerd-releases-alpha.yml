@@ -1,7 +1,8 @@
 name: Get the latest Containerd release for Alpha
 on:
-  schedule:
-    - cron:  '00 8 * * *'
+  push:
+    branches:
+      - '*'
 
 jobs:
   get-containerd-release:
