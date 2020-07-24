@@ -15,12 +15,22 @@ jobs:
         id: fetch-latest-release
         env:
           KV_MAIN: 5.4
+          KV_STABLE: 4.19
+          KV_BETA: 5.4
         run: |
           git clone --depth=1 --no-checkout https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux
           versionMain=$(git -C linux ls-remote --tags origin | cut -f2 | sed -n "/refs\/tags\/v${KV_MAIN}.[0-9]*$/s/^refs\/tags\/v//p" | sort -ruV | head -1)
+          versionStable=$(git -C linux ls-remote --tags origin | cut -f2 | sed -n "/refs\/tags\/v${KV_STABLE}.[0-9]*$/s/^refs\/tags\/v//p" | sort -ruV | head -1)
+          versionBeta=$(git -C linux ls-remote --tags origin | cut -f2 | sed -n "/refs\/tags\/v${KV_BETA}.[0-9]*$/s/^refs\/tags\/v//p" | sort -ruV | head -1)
           rm -rf linux
+          MAJOR_STABLE=$(curl -s -S -f -L "https://stable.release.flatcar-linux.net/amd64-usr/current/version.txt" | grep -m 1 FLATCAR_BUILD= | cut -d = -f 2-)
+          MAJOR_BETA=$(curl -s -S -f -L "https://beta.release.flatcar-linux.net/amd64-usr/current/version.txt" | grep -m 1 FLATCAR_BUILD= | cut -d = -f 2-)
           echo ::set-output name=VERSION_MAIN::$(echo ${versionMain})
+          echo ::set-output name=VERSION_STABLE::$(echo ${versionStable})
+          echo ::set-output name=VERSION_BETA::$(echo ${versionBeta})
           echo ::set-output name=BASE_BRANCH_MAIN::main
+          echo ::set-output name=BASE_BRANCH_STABLE::flatcar-$(echo ${MAJOR_STABLE})
+          echo ::set-output name=BASE_BRANCH_BETA::flatcar-$(echo ${MAJOR_BETA})
       - name: Set up Flatcar SDK
         id: setup-flatcar-sdk
         run: .github/workflows/setup-flatcar-sdk.sh
@@ -45,3 +55,47 @@ jobs:
           commit-message: Upgrade Linux Kernel in main from ${{ steps.apply-patch-main.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}
           body: Upgrade Linux Kernel in main from ${{ steps.apply-patch-main.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}
           labels: main
+
+      - name: Apply patch for Stable
+        id: apply-patch-stable
+        env:
+          TARGET: stable
+          BASE_BRANCH: ${{ steps.fetch-latest-release.outputs.BASE_BRANCH_STABLE }}
+          PATH: ${{ steps.setup-flatcar-sdk.outputs.path }}
+          VERSION_NEW: ${{ steps.fetch-latest-release.outputs.VERSION_STABLE }}
+        run: .github/workflows/kernel-apply-patch.sh
+      - name: Create pull request for Stable
+        uses: peter-evans/create-pull-request@v2
+        if: steps.apply-patch-stable.outputs.UPDATE_NEEDED == 1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ steps.fetch-latest-release.outputs.BASE_BRANCH_STABLE }}
+          branch: linux-${{ steps.fetch-latest-release.outputs.VERSION_STABLE }}-stable
+          author: Flatcar Buildbot <buildbot@flatcar-linux.org>
+          committer: Flatcar Buildbot <buildbot@flatcar-linux.org>
+          title: Upgrade Linux Kernel in Stable from ${{ steps.apply-patch-stable.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_STABLE }}
+          commit-message: Upgrade Linux Kernel in Stable from ${{ steps.apply-patch-stable.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_STABLE }}
+          body: Upgrade Linux Kernel in Stable from ${{ steps.apply-patch-stable.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_STABLE }}
+          labels: stable
+
+      - name: Apply patch for Beta
+        id: apply-patch-beta
+        env:
+          TARGET: beta
+          BASE_BRANCH: ${{ steps.fetch-latest-release.outputs.BASE_BRANCH_BETA }}
+          PATH: ${{ steps.setup-flatcar-sdk.outputs.path }}
+          VERSION_NEW: ${{ steps.fetch-latest-release.outputs.VERSION_BETA }}
+        run: .github/workflows/kernel-apply-patch.sh
+      - name: Create pull request for Beta
+        uses: peter-evans/create-pull-request@v2
+        if: steps.apply-patch-beta.outputs.UPDATE_NEEDED == 1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ steps.fetch-latest-release.outputs.BASE_BRANCH_BETA }}
+          branch: linux-${{ steps.fetch-latest-release.outputs.VERSION_BETA }}-beta
+          author: Flatcar Buildbot <buildbot@flatcar-linux.org>
+          committer: Flatcar Buildbot <buildbot@flatcar-linux.org>
+          title: Upgrade Linux Kernel in Beta from ${{ steps.apply-patch-beta.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_BETA }}
+          commit-message: Upgrade Linux Kernel in Beta from ${{ steps.apply-patch-beta.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_BETA }}
+          body: Upgrade Linux Kernel in Beta from ${{ steps.apply-patch-beta.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_BETA }}
+          labels: beta
