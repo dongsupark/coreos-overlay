@@ -42,6 +42,7 @@ jobs:
           title: Upgrade dev-lang/rust in main from ${{ steps.apply-patch-main.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}
           commit-message: Upgrade dev-lang/rust in main from ${{ steps.apply-patch-main.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}
           body: Upgrade dev-lang/rust in main from ${{ steps.apply-patch-main.outputs.VERSION_OLD }} to ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}
+            This PR should be merged together with a corresponding PR in portage-stable for `virtual/rust` ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}.
           labels: main
       - name: Send repository dispatch to portage-stable
         uses: peter-evans/repository-dispatch@v1.0.0
