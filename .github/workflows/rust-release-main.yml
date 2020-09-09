@@ -1,7 +1,8 @@
 name: Get the latest Rust release for main
 on:
-  schedule:
-    - cron:  '20 7 * * 2'
+  push:
+    branches:
+      - "main"
 
 jobs:
   get-rust-release:
@@ -47,5 +48,5 @@ jobs:
         if: steps.apply-patch-main.outputs.UPDATE_NEEDED == 1
         with:
           token: ${{ secrets.FLATCAR_PORTAGE_STABLE_ACCESS_TOKEN }}
-          repository: flatcar-linux/portage-stable
+          repository: dongsupark/portage-stable
           event-type: rust-pull-request-main

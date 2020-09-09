@@ -13,6 +13,10 @@ fi
 
 pushd "${SDK_OUTER_SRCDIR}/third_party/coreos-overlay" >/dev/null || exit
 
+git remote add dongsupark https://github.com/dongsupark/coreos-overlay
+git fetch dongsupark
+git checkout dongsupark/main
+
 VERSION_OLD=$(sed -n "s/^DIST rustc-\(1.[0-9]*.[0-9]*\).*/\1/p" dev-lang/rust/Manifest | sort -ruV | head -n1)
 if [[ "${VERSION_NEW}" = "${VERSION_OLD}" ]]; then
   echo "already the latest Rust, nothing to do"
