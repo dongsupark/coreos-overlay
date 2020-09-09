@@ -31,6 +31,7 @@ jobs:
           VERSION_NEW: ${{ steps.fetch-latest-release.outputs.VERSION_MAIN }}
         run: .github/workflows/rust-apply-patch.sh
       - name: Create pull request for main
+        id: create-pull-request
         uses: peter-evans/create-pull-request@v2
         if: steps.apply-patch-main.outputs.UPDATE_NEEDED == 1
         with:
@@ -51,3 +52,4 @@ jobs:
           token: ${{ secrets.FLATCAR_PORTAGE_STABLE_ACCESS_TOKEN }}
           repository: dongsupark/portage-stable
           event-type: rust-pull-request-main
+          client-payload: '{"coreos-overlay-pull-request-number": "${{ steps.create-pull-request.outputs.pull-request-number }}"}'
