@@ -110,3 +110,6 @@ sys-kernel/coreos-firmware -savedconfig
 
 # Make kmod support kernel modules compressed via lzma(xz)
 sys-apps/kmod lzma
+
+# ec2
+coreos-base/oem-ec2-compat ec2
