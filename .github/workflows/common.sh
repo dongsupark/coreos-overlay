@@ -17,7 +17,17 @@ function checkout_branches() {
 
   [[ -z "${TARGET_BRANCH}" ]] && echo "No target branch specified. exit." && return 1
 
+  git -C "${SDK_OUTER_SRCDIR}/third_party/scripts" remote set-url github https://github.com/dongsupark/scripts
+  git -C "${SDK_OUTER_SRCDIR}/third_party/scripts" fetch --all --prune
+
+  git -C "${SDK_OUTER_SRCDIR}/third_party/portage-stable" remote set-url github https://github.com/dongsupark/portage-stable
+  git -C "${SDK_OUTER_SRCDIR}/third_party/portage-stable" fetch --all --prune
+
+  git -C "${SDK_OUTER_SRCDIR}/third_party/coreos-overlay" remote set-url github https://github.com/dongsupark/coreos-overlay
+  git -C "${SDK_OUTER_SRCDIR}/third_party/coreos-overlay" fetch --all --prune
+
   git -C "${SDK_OUTER_SRCDIR}/scripts" checkout -B "${BASE_BRANCH}" "github/${BASE_BRANCH}"
+
   git -C "${SDK_OUTER_SRCDIR}/third_party/portage-stable" checkout -B "${BASE_BRANCH}" "github/${BASE_BRANCH}"
 
   if git -C "${SDK_OUTER_SRCDIR}/third_party/coreos-overlay" show-ref "remotes/github/${TARGET_BRANCH}"; then
