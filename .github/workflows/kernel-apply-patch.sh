@@ -6,6 +6,9 @@ set -euo pipefail
 VERSION_SHORT=${VERSION_NEW%.*}
 UPDATE_NEEDED=1
 
+echo "## VERSION_NEW = $VERSION_NEW"
+echo "## VERSION_SHORT = $VERSION_SHORT"
+
 . .github/workflows/common.sh
 
 if ! checkout_branches "linux-${VERSION_NEW}-${TARGET}"; then
@@ -19,6 +22,9 @@ VERSION_OLD=$(sed -n "s/^DIST patch-\(${VERSION_SHORT}.[0-9]*\).*/\1/p" sys-kern
 if [[ -z "${VERSION_OLD}" ]]; then
   VERSION_OLD=$(sed -n "s/^DIST linux-\(${VERSION_SHORT}*\).*/\1/p" sys-kernel/coreos-sources/Manifest)
 fi
+
+echo "## VERSION_OLD = $VERSION_OLD"
+
 if [[ "${VERSION_NEW}" = "${VERSION_OLD}" ]]; then
   echo "already the latest Kernel, nothing to do"
   UPDATE_NEEDED=0
