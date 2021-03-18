@@ -3,7 +3,7 @@
 # $Header: /var/cvsroot/gentoo-x86/sys-apps/policycoreutils/policycoreutils-2.4.ebuild,v 1.4 2015/05/10 09:08:19 perfinion Exp $
 
 EAPI="5"
-PYTHON_COMPAT=( python2_7 )
+PYTHON_COMPAT=( python2_7 python3_7 )
 PYTHON_REQ_USE="xml"
 
 inherit multilib python-r1 toolchain-funcs eutils systemd
