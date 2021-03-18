@@ -49,7 +49,7 @@ dev-util/meson python_single_target_python3_7
 dev-util/scons python_single_target_python3_7
 dev-vcs/repo python_single_target_python3_7
 net-fs/samba python_single_target_python3_7
-net-misc/google-cloud-sdk python_single_target_python3_7
+net-misc/google-cloud-sdk python_targets_python3_6 python_targets_python3_7
 sys-apps/portage python_single_target_python3_7
 sys-libs/talloc python_single_target_python3_7
 sys-libs/tdb python_single_target_python3_7
