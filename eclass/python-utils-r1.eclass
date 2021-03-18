@@ -20,8 +20,8 @@
 # https://dev.gentoo.org/~mgorny/python-guide/
 
 case "${EAPI:-0}" in
-	[0-4]) die "Unsupported EAPI=${EAPI:-0} (too old) for ${ECLASS}" ;;
-	[5-7]) ;;
+	[0-3]) die "Unsupported EAPI=${EAPI:-0} (too old) for ${ECLASS}" ;;
+	[4-7]) ;;
 	*)     die "Unsupported EAPI=${EAPI} (unknown) for ${ECLASS}" ;;
 esac
 
@@ -31,7 +31,7 @@ fi
 
 if [[ ! ${_PYTHON_UTILS_R1} ]]; then
 
-[[ ${EAPI} == 5 ]] && inherit eutils multilib
+[[ ${EAPI} == [45] ]] && inherit eutils multilib
 inherit toolchain-funcs
 
 # @ECLASS-VARIABLE: _PYTHON_ALL_IMPLS
@@ -1016,7 +1016,7 @@ python_is_installed() {
 	local hasv_args=()
 
 	case ${EAPI} in
-		5|6)
+		4|5|6)
 			hasv_args+=( --host-root )
 			;;
 		*)
@@ -1170,7 +1170,7 @@ python_fix_shebang() {
 
 		if [[ ! ${any_fixed} ]]; then
 			local cmd=eerror
-			[[ ${EAPI} == 5 ]] && cmd=eqawarn
+			[[ ${EAPI} == [45] ]] && cmd=eqawarn
 
 			"${cmd}" "QA warning: ${FUNCNAME}, ${path#${D%/}} did not match any fixable files."
 			if [[ ${any_correct} ]]; then
