@@ -1,7 +1,8 @@
 name: Get the latest Runc release for main
 on:
-  schedule:
-    - cron:  '50 7 * * 4'
+  push:
+    branches:
+      - main
 
 jobs:
   get-runc-release:
